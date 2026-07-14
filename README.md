@@ -13,18 +13,16 @@ transmit simultaneously to selected stations with reduced power. This demo lets 
 
 ## Methods available
 
-| Method | Backing library | Result on chart |
-|---|---|---|
-| **H-MAB** | [mapc-mab](https://github.com/ml4wifi-devs/mapc-mab) + [reinforced-lib](https://github.com/m-wojnar/reinforced-lib) | convergence curve |
-| **Flat MAB** | mapc-mab | convergence curve |
-| **T-Optimal** (max total throughput) | [mapc-optimal](https://github.com/ml4wifi-devs/mapc-optimal) — MILP, column generation | dashed horizontal line |
-| **F-Optimal** (max-min fairness) | mapc-optimal | dashed horizontal line |
-| **T-Meta** (SA / RRHC / Tabu) | [mapc-mh](https://github.com/ml4wifi-devs/mapc-mh) | best-so-far curve |
-| **F-Meta** (column generation, max-min fairness) | mapc-mh | best-so-far curve |
-| **FM4WiFi** (generative flow matching) | [lai4wifi](https://github.com/ml4wifi-devs/lai4wifi) | curve |
-| **DCF (legacy 802.11)** | [mapc-dcf](https://github.com/ml4wifi-devs/mapc-dcf) — per-frame discrete event simulator | horizontal line + 95% CI band |
-| **SR (802.11ax OBSS/PD)** | mapc-dcf | horizontal line + 95% CI band |
-| **Random (single TX)** | mapc-optimal-research | curve (legacy-like baseline) |
+- **H-MAB** — hierarchical multi-armed bandits, the paper's learning scheduler
+- **Flat MAB** — single-level bandit ablation baseline
+- **T-Optimal** — MILP upper bound on total throughput
+- **F-Optimal** — MILP optimum of max-min fairness
+- **T-Meta** — metaheuristic search (SA / RRHC / tabu) approximating T-Optimal
+- **F-Meta** — fairness column generation approximating F-Optimal
+- **FM4WiFi** — generative flow-matching scheduler with a surrogate model
+- **DCF** — legacy 802.11 channel access (discrete event simulation)
+- **SR** — 802.11ax OBSS/PD spatial reuse (discrete event simulation)
+- **Random (single TX)** — legacy-like random single-transmission baseline
 
 Scenarios and the Monte Carlo channel simulator come from
 [mapc-optimal-research](https://github.com/ml4wifi-devs/mapc-optimal-research) and
@@ -216,7 +214,7 @@ feeds the next `agent.sample(reward)`.
 | [mapc-mab](https://github.com/ml4wifi-devs/mapc-mab) | Hierarchical multi-armed bandit scheduler (H-MAB) |
 | [mapc-dcf](https://github.com/ml4wifi-devs/mapc-dcf) | Discrete event simulator of DCF and 802.11ax OBSS/PD spatial reuse |
 | [mapc-mh](https://github.com/ml4wifi-devs/mapc-mh) | Metaheuristic schedulers: T-Meta (SA / RRHC / tabu) and F-Meta (fairness column generation) |
-| [lai4wifi](https://github.com/ml4wifi-devs/lai4wifi) | FM4WiFi generative pipeline (GNN autoencoder + flow matching + surrogate) with trained checkpoints |
+| [fm4wifi](https://github.com/ml4wifi-devs/fm4wifi) | FM4WiFi generative pipeline (GNN autoencoder + flow matching + surrogate) with trained checkpoints |
 | [mapc-optimal-research](https://github.com/ml4wifi-devs/mapc-optimal-research) | Common scenario abstraction and TGax topology catalog |
 | [reinforced-lib](https://github.com/m-wojnar/reinforced-lib) | Reinforcement learning library providing the bandit algorithms |
 
@@ -225,10 +223,9 @@ feeds the next `agent.sample(reward)`.
 If you use this demo or the ecosystem in your research, please cite:
 
 ```bibtex
-@misc{jaxwifi,
+@misc{wojnar2026jaxwifi,
   title  = {{JAXWiFi}: An Open-Source Ecosystem for Learning-Based Multi-AP Coordination beyond {Wi-Fi} 8},
-  author = {Wojnar, Maksymilian and Kosek-Szott, Katarzyna and Rusek, Krzysztof and Szott, Szymon},
+  author = {Wojnar, Maksymilian and Rusek, Krzysztof and Kosek-Szott, Katarzyna and Szott, Szymon},
   year   = {2026},
-  note   = {Demo paper},
 }
 ```
