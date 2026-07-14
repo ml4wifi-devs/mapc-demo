@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JAXWiFi: An Open-Source Ecosystem for Learning-Based Multi-AP Coordination beyond Wi-Fi 8</title>
+<link rel="stylesheet" href="/static/style.css">
+<script src="/static/vendor/plotly.min.js"></script>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <span class="logo">⧉</span>
+    <h1>JAXWiFi: An Open-Source Ecosystem for Learning-Based Multi-AP Coordination beyond Wi-Fi 8</h1>
+  </div>
+</header>
+
+<main>
+  <section id="topology-panel" class="panel">
+    <div class="panel-header">
+      <h2>Network topology</h2>
+      <div class="toolbar">
+        <span id="topo-mode-badge" class="badge"></span>
+        <button id="btn-customize" class="small" title="Copy the current topology into custom mode for editing">Customize</button>
+        <button id="btn-undo" class="small" title="Remove the most recently placed node">Undo</button>
+        <button id="btn-clear" class="small" title="Remove all nodes">Clear</button>
+      </div>
+    </div>
+    <div id="topo-help" class="hint">
+      <b>Right click</b>: place AP &nbsp;&middot;&nbsp; <b>left click</b>: place STA for the selected AP
+      &nbsp;&middot;&nbsp; <b>click</b> AP to select &nbsp;&middot;&nbsp; <b>drag</b> to move &nbsp;&middot;&nbsp; <b>double click</b> to delete
+    </div>
+    <svg id="topology"></svg>
+    <div id="topo-coords" class="hint mono"></div>
+  </section>
+
+  <section id="config-panel" class="panel">
+    <div class="tabs">
+      <button class="tab active" data-tab="scenario">Scenario</button>
+      <button class="tab" data-tab="method">Method</button>
+    </div>
+
+    <div class="config-scroll">
+    <div id="tab-scenario" class="tab-content active">
+      <label class="field">
+        <span>Scenario <span class="info" data-tip="Predefined topology catalog (TGax scenarios and toy examples) or a custom hand-placed topology. Any change resets the comparison chart.">ⓘ</span></span>
+        <select id="scenario-select"></select>
+      </label>
+      <p id="scenario-description" class="hint"></p>
+      <div id="scenario-params"></div>
+      <h3>Simulation &amp; channel</h3>
+      <div id="global-params"></div>
+    </div>
+
+    <div id="tab-method" class="tab-content">
+      <label class="field">
+        <span>Method <span class="info" data-tip="Scheduling method to run on the current scenario. Run several methods one after another to compare them on the same topology.">ⓘ</span></span>
+        <select id="method-select"></select>
+      </label>
+      <p id="method-description" class="hint"></p>
+      <div id="method-params"></div>
+      <div id="agent-params"></div>
+    </div>
+    </div>
+
+    <div class="run-controls">
+      <button id="btn-start" class="primary" title="Run the selected method on the current scenario and add it to the chart">▶ Start run</button>
+      <button id="btn-stop" title="Stop all running simulations">■ Stop all</button>
+      <button id="btn-reset" title="Clear the chart and all finished runs">↺ Reset chart</button>
+    </div>
+    <div id="run-list"></div>
+  </section>
+
+  <section id="chart-panel" class="panel">
+    <div class="panel-header">
+      <h2>Effective data rate</h2>
+      <div class="toolbar">
+        <label class="ema-control" title="Exponential moving average smoothing of the throughput curves. 0 disables smoothing; higher values smooth more. Raw data stays visible as a faint line.">
+          EMA <input type="range" id="ema-slider" min="0" max="0.99" step="0.01" value="0.9">
+          <span id="ema-value" class="mono">0.90</span>
+        </label>
+      </div>
+    </div>
+    <div id="chart"></div>
+  </section>
+</main>
+
+<script src="/static/chart.js"></script>
+<script src="/static/topology.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>

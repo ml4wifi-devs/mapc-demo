@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+
+mapc_sim @ git+https://github.com/ml4wifi-devs/mapc-sim
+mapc_mab @ git+https://github.com/ml4wifi-devs/mapc-mab
+mapc_optimal @ git+https://github.com/ml4wifi-devs/mapc-optimal
+mapc_dcf @ git+https://github.com/ml4wifi-devs/mapc-dcf
+mapc_optimal_research @ git+https://github.com/ml4wifi-devs/mapc-optimal-research
+mapc-mh @ git+https://github.com/ml4wifi-devs/mapc-mh@fairness-cg
+-e git+https://github.com/ml4wifi-devs/lai4wifi#egg=lai4wifi
