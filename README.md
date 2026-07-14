@@ -206,3 +206,29 @@ HTTP API (all JSON):
 Simulation loop (curve methods) is the canonical MAPC RL loop: per step the agent emits
 `(tx_matrix, tx_power)`, the JAX simulator returns `(throughput, reward)`, the reward
 feeds the next `agent.sample(reward)`.
+
+## 6. Ecosystem repositories
+
+| Repository | Purpose |
+|---|---|
+| [mapc-sim](https://github.com/ml4wifi-devs/mapc-sim) | JAX Monte Carlo simulator of Co-SR transmission opportunities (TGax path loss, Nakagami-m fading) |
+| [mapc-optimal](https://github.com/ml4wifi-devs/mapc-optimal) | MILP upper bounds via column generation (T-Optimal / F-Optimal) |
+| [mapc-mab](https://github.com/ml4wifi-devs/mapc-mab) | Hierarchical multi-armed bandit scheduler (H-MAB) |
+| [mapc-dcf](https://github.com/ml4wifi-devs/mapc-dcf) | Discrete event simulator of DCF and 802.11ax OBSS/PD spatial reuse |
+| [mapc-mh](https://github.com/ml4wifi-devs/mapc-mh) | Metaheuristic schedulers: T-Meta (SA / RRHC / tabu) and F-Meta (fairness column generation) |
+| [lai4wifi](https://github.com/ml4wifi-devs/lai4wifi) | FM4WiFi generative pipeline (GNN autoencoder + flow matching + surrogate) with trained checkpoints |
+| [mapc-optimal-research](https://github.com/ml4wifi-devs/mapc-optimal-research) | Common scenario abstraction and TGax topology catalog |
+| [reinforced-lib](https://github.com/m-wojnar/reinforced-lib) | Reinforcement learning library providing the bandit algorithms |
+
+## 7. Citation
+
+If you use this demo or the ecosystem in your research, please cite:
+
+```bibtex
+@misc{jaxwifi,
+  title  = {{JAXWiFi}: An Open-Source Ecosystem for Learning-Based Multi-AP Coordination beyond {Wi-Fi} 8},
+  author = {Wojnar, Maksymilian and Kosek-Szott, Katarzyna and Rusek, Krzysztof and Szott, Szymon},
+  year   = {2026},
+  note   = {Demo paper},
+}
+```
