@@ -15,7 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
 # Import order defines the method dropdown order in the UI.
-from .methods import hmab, optimal, mh, fm, dcf, rand  # noqa: F401 — populates the registry
+from .methods import hmab, optimal, mh, fm, surrogate, dcf, rand  # noqa: F401 — populates the registry
 from .methods.base import method_catalog
 from .runs import manager
 from .scenarios import catalog, scenario_preview

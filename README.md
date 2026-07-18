@@ -20,6 +20,7 @@ transmit simultaneously to selected stations with reduced power. This demo lets 
 - **T-Meta** — metaheuristic search (SA / RRHC / tabu) approximating T-Optimal
 - **F-Meta** — fairness column generation approximating F-Optimal
 - **FM4WiFi** — generative flow-matching scheduler with a surrogate model
+- **MAPC-Surrogate** — random configurations scored by a GNN surrogate model
 - **DCF** — legacy 802.11 channel access (discrete event simulation)
 - **SR** — 802.11ax OBSS/PD spatial reuse (discrete event simulation)
 - **Random (single TX)** — legacy-like random single-transmission baseline
@@ -40,8 +41,9 @@ Requirements: **Python ≥ 3.12** (3.13 recommended) and git. One command:
 ```
 
 It creates `.venv` and installs every ecosystem package directly from GitHub —
-no manual checkouts, no environment variables. `lai4wifi` is installed as an
-editable clone (kept in `.venv/src`) so the FM4WiFi model checkpoints ship with it.
+no manual checkouts, no environment variables. `lai4wifi` and `mapc-surrogate`
+are installed as editable clones (kept in `.venv/src`) so their trained model
+checkpoints ship with them.
 
 ## 2. Running
 
@@ -126,6 +128,10 @@ Pick a method and its parameters:
 - **FM4WiFi** — candidates per step, top-k evaluated, surrogate vs simulator scoring;
   the number of observation-generation rounds follows from the time horizon. Trained on
   specific topology distributions; hand-drawn topologies may be out-of-distribution.
+- **MAPC-Surrogate** — candidates per step, top-k evaluated, risk-averse scoring toggle;
+  draws random Co-SR configurations and scores them all in one batched forward pass of
+  a GNN surrogate model — no learning, no generation, no iterative search. Same
+  out-of-distribution caveat as FM4WiFi.
 
 ### 3.4 Running comparisons
 
@@ -157,7 +163,7 @@ from the Random level toward the T-Optimal dashed line.
 
 | Symptom | Cause / fix |
 |---|---|
-| FM4WiFi run ends with a checkpoint error | `.venv/src/lai4wifi` missing — rerun `./install.sh`. |
+| FM4WiFi / MAPC-Surrogate run ends with a checkpoint error | `.venv/src/lai4wifi` or `.venv/src/mapc-surrogate` missing — rerun `./install.sh`. |
 | Flat MAB errors with *action space is too large* | Expected guard. Use H-MAB, fewer APs/stations, or fewer TX power levels. |
 | DCF/SR runs for many minutes | Normal — detailed DES. Reduce simulated time or topology size, or stop the run. |
 | First run of a method stalls a few seconds | JAX JIT compilation; subsequent steps are fast. |
@@ -181,7 +187,8 @@ mapc-demo/
 │       ├── optimal.py    T-Optimal / F-Optimal (mapc-optimal)
 │       ├── dcf.py        DCF / SR (mapc-dcf, SimPy DES)
 │       ├── mh.py         SA / RRHC / Tabu (mapc-mh)
-│       └── fm.py         FM4WiFi (lai4wifi; lazy checkpoint loading, cached)
+│       ├── fm.py         FM4WiFi (lai4wifi; lazy checkpoint loading, cached)
+│       └── surrogate.py  MAPC-Surrogate (mapc-surrogate; lazy checkpoint loading, cached)
 └── frontend/             vanilla JS, no build step
     ├── index.html
     ├── style.css         light/dark via prefers-color-scheme
@@ -215,6 +222,7 @@ feeds the next `agent.sample(reward)`.
 | [mapc-dcf](https://github.com/ml4wifi-devs/mapc-dcf) | Discrete event simulator of DCF and 802.11ax OBSS/PD spatial reuse |
 | [mapc-mh](https://github.com/ml4wifi-devs/mapc-mh) | Metaheuristic schedulers: T-Meta (SA / RRHC / tabu) and F-Meta (fairness column generation) |
 | [fm4wifi](https://github.com/ml4wifi-devs/fm4wifi) | FM4WiFi generative pipeline (GNN autoencoder + flow matching + surrogate) with trained checkpoints |
+| [mapc-surrogate](https://github.com/ml4wifi-devs/mapc-surrogate) | Surrogate-only scheduler: random candidates scored by a GNN+MDN surrogate model, trained checkpoint included |
 | [mapc-optimal-research](https://github.com/ml4wifi-devs/mapc-optimal-research) | Common scenario abstraction and TGax topology catalog |
 | [reinforced-lib](https://github.com/m-wojnar/reinforced-lib) | Reinforcement learning library providing the bandit algorithms |
 

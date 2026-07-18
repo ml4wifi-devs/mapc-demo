@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Set up the demo: virtual environment + all dependencies from GitHub.
-# lai4wifi is installed as an editable clone (kept in .venv/src) because the
-# demo reads the FM4WiFi model checkpoints from the repo itself.
+# lai4wifi and mapc-surrogate are installed as editable clones (kept in
+# .venv/src) because the demo reads their model checkpoints from the repos.
 set -euo pipefail
 cd "$(dirname "$0")"
 
