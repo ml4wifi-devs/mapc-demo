@@ -168,6 +168,7 @@ register({
     'kind': 'curve',
     'description': 'Generative model: a GNN encoder embeds the observed network state, a flow-matching model '
                    'proposes candidate Co-SR configurations, and a surrogate model pre-selects the best ones. '
+                   'SLOW: generation plus top-k simulator evaluation costs seconds per TXOP. Lower the candidate count for a quicker run. '
                    'Note: trained on specific topology distributions — custom hand-drawn topologies may be '
                    'out-of-distribution.',
     'params': [

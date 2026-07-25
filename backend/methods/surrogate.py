@@ -129,6 +129,7 @@ register({
     'description': 'Surrogate-only scheduler: draws random Co-SR configurations, scores them all in one '
                    'batched forward pass of a GNN surrogate model (MDN head), and evaluates the best ones '
                    'in the simulator. No learning, no generative model, no iterative optimization. '
+                   'SLOW: top-k evaluation can cost seconds per TXOP. Lower the candidate count for a quicker run. '
                    'Note: trained on specific topology distributions — custom hand-drawn topologies may be '
                    'out-of-distribution.',
     'params': [

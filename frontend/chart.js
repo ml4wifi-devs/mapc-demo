@@ -137,6 +137,20 @@ const Chart = (() => {
       render();
     },
     setEma(alpha) { emaAlpha = alpha; render(); },
+    getSeries(runId) {
+      const r = runs.get(runId);
+      return r ? { steps: r.x.slice(), data_rate: r.y.slice(), hline: r.hline, ci: r.ci } : null;
+    },
+    loadRun(runId, label, kind, series) {
+      const color = nextColor();
+      runs.set(runId, {
+        label, color, kind,
+        x: (series.steps || []).slice(), y: (series.data_rate || []).slice(),
+        hline: series.hline ?? null, ci: series.ci ?? null,
+      });
+      render();
+      return color;
+    },
     reset() { runs.clear(); colorCounter = 0; render(); },
     hasRuns() { return runs.size > 0; },
     render,

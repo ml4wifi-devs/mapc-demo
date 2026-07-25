@@ -35,7 +35,8 @@ register({
     'name': 'T-Optimal',
     'kind': 'hline',
     'description': 'Upper bound on total network throughput from a mixed-integer linear program. '
-                   'Assumes perfect channel knowledge and scheduling — no learning involved.',
+                   'Assumes perfect channel knowledge and scheduling — no learning involved. '
+                   'The solve time grows steeply with the number of APs and stations.',
     'params': _PARAMS,
     'run': _run_optimal(OptimizationType.SUM),
 })
@@ -45,7 +46,8 @@ register({
     'name': 'F-Optimal',
     'kind': 'hline',
     'description': 'Analytical optimum of the max-min (fairness) objective: maximizes the worst station '
-                   'throughput, then reports the resulting total throughput. Lower than T-Optimal by design.',
+                   'throughput, then reports the resulting total throughput. Lower than T-Optimal by design. '
+                   'The solve time grows steeply with the number of APs and stations.',
     'params': _PARAMS,
     'run': _run_optimal(OptimizationType.MAX_MIN),
 })

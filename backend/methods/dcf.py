@@ -88,7 +88,9 @@ register({
     'name': 'DCF (legacy 802.11)',
     'kind': 'hline',
     'description': 'Legacy 802.11 operation: CSMA/CA with binary exponential backoff, no coordination, '
-                   'full transmit power. Shown as a horizontal line (mean over runs with 95% CI).',
+                   'full transmit power. Shown as a horizontal line (mean over runs with 95% CI). '
+                   'SLOW: per-frame discrete event simulation, and the cost follows the simulated channel '
+                   'time rather than the step count. Keep the time horizon short.',
     'params': _PARAMS,
     'run': _run_dcf(sr=False),
 })
@@ -98,7 +100,8 @@ register({
     'name': 'SR (802.11ax)',
     'kind': 'hline',
     'description': '802.11ax OBSS/PD Spatial Reuse: uncoordinated parallel transmissions allowed when the '
-                   'detected OBSS signal is below the packet-detect threshold. Shown as a horizontal line.',
+                   'detected OBSS signal is below the packet-detect threshold. Shown as a horizontal line. '
+                   'As slow as DCF — same per-frame simulation. Keep the time horizon short.',
     'params': _PARAMS,
     'run': _run_dcf(sr=True),
 })

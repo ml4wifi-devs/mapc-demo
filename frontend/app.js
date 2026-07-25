@@ -34,6 +34,15 @@
                                : params.map(p => fieldHtml(p)).join('');
   }
 
+  function setParams(container, values) {
+    if (!values) return;
+    container.querySelectorAll('input, select').forEach(el => {
+      if (!(el.name in values)) return;
+      if (el.type === 'checkbox') el.checked = !!values[el.name];
+      else el.value = values[el.name];
+    });
+  }
+
   function readParams(container) {
     const out = {};
     container.querySelectorAll('input, select').forEach(el => {
@@ -194,21 +203,23 @@
     return `${m.name}${suffix} #${runCounter}`;
   }
 
-  function addRunItem(runId, label, color) {
+  function addRunItem(runId, label, color, meta, imported = false) {
     const div = document.createElement('div');
     div.className = 'run-item';
     div.innerHTML = `<span class="swatch" style="background:${color}"></span>` +
       `<span class="label" title="${label}">${label}</span>` +
-      `<span class="state">queued</span>` +
-      `<button title="Stop this run">stop</button>`;
-    div.querySelector('button').addEventListener('click', () => {
-      fetch('/api/run/stop', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ run_id: runId }),
+      `<span class="state">${imported ? 'loaded' : 'queued'}</span>` +
+      (imported ? '' : `<button title="Stop this run">stop</button>`);
+    if (!imported) {
+      div.querySelector('button').addEventListener('click', () => {
+        fetch('/api/run/stop', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ run_id: runId }),
+        });
       });
-    });
+    }
     $('run-list').prepend(div);
-    runs.set(runId, { label, el: div, stateEl: div.querySelector('.state') });
+    runs.set(runId, { label, el: div, stateEl: div.querySelector('.state'), ...meta });
     const pending = pendingMsgs.get(runId);
     if (pending) {
       pendingMsgs.delete(runId);
@@ -226,7 +237,7 @@
       body: JSON.stringify({ method: m.id, params, scenario: scenarioConfig() }),
     })).json();
     const color = Chart.addRun(res.run_id, label, m.kind);
-    addRunItem(res.run_id, label, color);
+    addRunItem(res.run_id, label, color, { method: m.id, method_name: m.name, kind: m.kind, params });
   }
 
   function stopAll() {
@@ -246,6 +257,106 @@
   $('btn-start').addEventListener('click', startRun);
   $('btn-stop').addEventListener('click', stopAll);
   $('btn-reset').addEventListener('click', resetChart);
+
+  // ---------- save / load ----------
+  // Everything needed to reproduce a comparison lives in the browser already:
+  // the scenario form, the per-run method parameters, and the streamed points.
+
+  const FILE_FORMAT = 'jaxwifi-demo-results';
+
+  function snapshot() {
+    return {
+      format: FILE_FORMAT,
+      version: 1,
+      created: new Date().toISOString(),
+      scenario: scenarioConfig(),
+      runs: [...runs.entries()].map(([runId, r]) => ({
+        label: r.label,
+        method: r.method,
+        method_name: r.method_name,
+        kind: r.kind,
+        state: r.stateEl.textContent,
+        params: r.params,
+        ...Chart.getSeries(runId),
+      })).reverse(),  // chronological, the run list is newest-first
+    };
+  }
+
+  function saveResults() {
+    const data = snapshot();
+    const stamp = data.created.replace(/[:.]/g, '-').slice(0, 19);
+    const blob = new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `jaxwifi-${data.scenario.id}-${stamp}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  // Restores the scenario (and optionally the recorded runs) from a snapshot.
+  // Exposed on window so it can also be driven from the browser console.
+  function applySnapshot(data, withRuns) {
+    if (data.format !== FILE_FORMAT) throw new Error(`not a ${FILE_FORMAT} file`);
+    stopAll();
+    resetChart();
+
+    const s = data.scenario || {};
+    if (s.id) {
+      scenarioSelect.value = s.id;
+      renderScenarioParams();
+      setParams($('scenario-params'), s.params);
+      setParams($('global-params'), s.globals);
+    }
+    if (s.custom && s.custom.aps) Topology.setCustom(s.custom.aps, false);
+    refreshPreview();
+
+    // Preload the method panel with the first recorded run, so the loaded
+    // configuration can be re-run as it was.
+    const first = (data.runs || [])[0];
+    if (first && catalog.methods.some(m => m.id === first.method)) {
+      methodSelect.value = first.method;
+      renderMethodParams();
+      setParams($('method-params'), first.params);
+      renderAgentParams();
+      for (const [key, vals] of Object.entries(first.params || {})) {
+        if (!key.startsWith('params_')) continue;
+        const lvl = key.slice('params_'.length);
+        for (const [name, v] of Object.entries(vals)) {
+          const el = $('agent-params').querySelector(`[name="${lvl}:${name}"]`);
+          if (el) el.value = v;
+        }
+      }
+    }
+
+    if (!withRuns) return 0;
+    // Imported runs are inert (no backend run to stop), so they get negative ids.
+    let importId = -1;
+    for (const r of data.runs || []) {
+      runCounter += 1;
+      const color = Chart.loadRun(importId, r.label, r.kind, r);
+      addRunItem(importId, r.label, color,
+        { method: r.method, method_name: r.method_name, kind: r.kind, params: r.params }, true);
+      importId -= 1;
+    }
+    return (data.runs || []).length;
+  }
+  window.applySnapshot = applySnapshot;
+
+  $('btn-save').addEventListener('click', saveResults);
+  $('btn-load').addEventListener('click', () => $('file-load').click());
+  $('file-load').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = '';  // allow re-loading the same file
+    try {
+      const data = JSON.parse(await file.text());
+      const n = (data.runs || []).length;
+      const withRuns = n > 0 && confirm(`Loaded scenario from ${file.name}.\n\nAlso load its ${n} recorded run(s) into the chart?`);
+      applySnapshot(data, withRuns);
+    } catch (err) {
+      alert(`Could not load ${file.name}: ${err.message}`);
+    }
+  });
 
   // ---------- EMA ----------
 

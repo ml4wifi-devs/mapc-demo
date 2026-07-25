@@ -296,6 +296,7 @@ button:focus-visible { outline: none; box-shadow: var(--ring); }
 .run-controls {
   flex: 0 0 auto;
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin: 10px 0 8px;
   padding-top: 10px;

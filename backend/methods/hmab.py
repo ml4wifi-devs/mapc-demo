@@ -1,6 +1,9 @@
 """H-MAB / Flat MAB / Random baseline runners (mapc-mab + reinforced-lib)."""
 
+import threading
+
 import jax
+import numpy as np
 from mapc_mab import MapcAgentFactory
 from mapc_research.mab.random_agent import RandomMapcAgentFactory
 from reinforced_lib.agents.mab import (
@@ -85,9 +88,37 @@ AGENT_PARAM_TOOLTIPS = {
 }
 
 
-def _mab_loop(scenario, agent_factory, n_steps, seed, emit, stop_event):
+# mapc-mab and mapc_research's random agent pick the sharing AP and its station
+# with the *process-global* numpy RNG (and reseed it in the agent factory). The
+# demo runs several methods concurrently in one process, so runs would consume one
+# shared stream and a newly started run would reseed a running one. Each run
+# therefore keeps its own stream and swaps it into the global RNG around every
+# call into those agents, which keeps a run's results identical whether it runs
+# alone or next to others.
+_np_rng_lock = threading.Lock()
+
+
+class _NumpyRngStream:
+    def __init__(self, seed):
+        self._state = None
+        self.call(np.random.seed, seed)
+
+    def call(self, fn, *args, **kwargs):
+        with _np_rng_lock:
+            outer = np.random.get_state()
+            if self._state is not None:
+                np.random.set_state(self._state)
+            try:
+                return fn(*args, **kwargs)
+            finally:
+                self._state = np.random.get_state()
+                np.random.set_state(outer)
+
+
+def _mab_loop(scenario, make_factory, n_steps, seed, emit, stop_event):
     key = jax.random.PRNGKey(seed)
-    agent = agent_factory.create_mapc_agent()
+    rng = _NumpyRngStream(seed)
+    agent = rng.call(lambda: make_factory().create_mapc_agent())
     scenario.reset()
     reward = 0.0
 
@@ -95,7 +126,7 @@ def _mab_loop(scenario, agent_factory, n_steps, seed, emit, stop_event):
         if stop_event.is_set():
             return
         key, scenario_key = jax.random.split(key)
-        tx = agent.sample(reward)
+        tx = rng.call(agent.sample, reward)
         thr, reward = scenario(scenario_key, *tx)
         emit({'type': 'point', 'step': step, 'thr': float(thr)})
 
@@ -125,25 +156,27 @@ def _run_mab(hierarchical):
             lvl1 = {**defaults['flat'], **(params.get('params_lvl1') or {})}
             lvl2 = lvl3 = None
 
-        factory = MapcAgentFactory(
-            scenario.associations,
-            agent_type=agent_type,
-            agent_params_lvl1=lvl1,
-            agent_params_lvl2=lvl2,
-            agent_params_lvl3=lvl3,
-            hierarchical=hierarchical,
-            tx_power_levels=int(globals_cfg.get('tx_power_levels', 4)),
-            seed=seed,
-        )
-        _mab_loop(scenario, factory, int(globals_cfg.get('n_steps', 600)), seed, emit, stop_event)
+        def make_factory():
+            return MapcAgentFactory(
+                scenario.associations,
+                agent_type=agent_type,
+                agent_params_lvl1=lvl1,
+                agent_params_lvl2=lvl2,
+                agent_params_lvl3=lvl3,
+                hierarchical=hierarchical,
+                tx_power_levels=int(globals_cfg.get('tx_power_levels', 4)),
+                seed=seed,
+            )
+
+        _mab_loop(scenario, make_factory, int(globals_cfg.get('n_steps', 600)), seed, emit, stop_event)
 
     return run
 
 
 def _run_random(scenario, globals_cfg, params, emit, stop_event):
     seed = int(params.get('seed', 42))
-    factory = RandomMapcAgentFactory(scenario.associations, seed=seed)
-    _mab_loop(scenario, factory, int(globals_cfg.get('n_steps', 600)), seed, emit, stop_event)
+    _mab_loop(scenario, lambda: RandomMapcAgentFactory(scenario.associations, seed=seed),
+              int(globals_cfg.get('n_steps', 600)), seed, emit, stop_event)
 
 
 def _p(name, label, type_, default, tooltip, **extra):

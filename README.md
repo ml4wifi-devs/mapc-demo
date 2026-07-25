@@ -147,7 +147,42 @@ Suggested first comparison (small office, defaults, 600-TXOP horizon): H-MAB (UC
 then T-Optimal, F-Optimal, T-Meta (SA), and Random. You should see the H-MAB curve climb
 from the Random level toward the T-Optimal dashed line.
 
-### 3.5 The chart
+### 3.5 Saving and loading results
+
+Save downloads everything needed to reproduce or post-process the comparison as
+one JSON file: the scenario and its parameters, the channel/PHY settings, and every run
+with its method, its parameters, and its recorded data rates.
+
+```jsonc
+{
+  "format": "jaxwifi-demo-results", "version": 1, "created": "2026-07-24T18:00:00.000Z",
+  "scenario": {
+    "id": "small_office",
+    "params": {"d_ap": 25, "d_sta": 2},
+    "custom": {"aps": []},                  // hand-drawn topology, when id == "custom"
+    "globals": {"n_steps": 600, "channel_width": 20, "path_loss": "enterprise", ...}
+  },
+  "runs": [{
+    "label": "H-MAB (UCB) #1", "method": "hmab", "method_name": "H-MAB",
+    "kind": "curve",                        // "curve" or "hline"
+    "state": "done",
+    "params": {"agent_type": "UCB", "seed": 42, "params_lvl1": {"c": 1.5, "gamma": 0.6}, ...},
+    "steps": [1, 2, 3],                     // x values (TXOP index)
+    "data_rate": [98.1, 104.7, 111.2],      // y values [Mb/s]
+    "hline": null, "ci": null               // one-shot methods: value + 95% CI instead
+  }]
+}
+```
+
+Load reads such a file back: it restores the scenario, all channel settings, the
+custom topology if there was one, and preloads the method panel with the first recorded
+run, so the same configuration can be run again. If the file contains runs, you are asked
+whether to also draw them on the chart — loaded runs are inert (nothing is re-simulated),
+they just come back with their curves and colors. The file records the exact configuration,
+so a loaded setup re-runs to the same numbers. Every method is fully reproducible
+as each carries an explicit seed.
+
+### 3.6 The chart
 
 - x: transmission opportunity (step); y: effective data rate of the whole network [Mb/s],
   anchored at 0.
