@@ -77,7 +77,7 @@ SCENARIOS = {
     },
     'small_office': {
         'name': 'Small office (2x2 rooms)',
-        'description': '4 APs in a 2x2 room grid, 4 STAs each, walls between BSSs (paper Fig. 2 style).',
+        'description': '4 APs in a 2x2 room grid, 4 STAs each, walls between BSSs.',
         'factory': small_office_scenario,
         'params': [
             _p('d_ap', 'AP distance [m]', 'number', 25.0, 'Distance between neighboring APs.', min=5.0, max=100.0, step=1.0),
@@ -97,8 +97,8 @@ SCENARIOS = {
         ],
     },
     'symm_residential': {
-        'name': 'Symmetric residential (paper topology)',
-        'description': 'Symmetric variant of the residential scenario: AP centered in each apartment, STAs on a ring — the 2x4 room topology from the paper. Use residential path loss.',
+        'name': 'Symmetric residential',
+        'description': 'Symmetric variant of a residential scenario: AP centered in each apartment, STAs on a ring — a 2x4 room topology. Use residential path loss.',
         'factory': symm_residential_scenario,
         'params': [
             _p('seed', 'Topology seed', 'number', 42, 'Random seed (used for circle STA placement).', min=0, max=10_000, step=1),
