@@ -4,8 +4,31 @@ from itertools import chain
 
 import numpy as np
 from mapc_optimal import OptimizationType, Solver, positions_to_path_loss
+from mapc_sim.constants import DATA_RATES
 
 from .base import register
+
+
+def _optimal_config(result, channel_width):
+    """Time-shared MILP schedule: one entry per configuration (share of time),
+    each with its active AP->STA links, tx power [dBm], and nearest MCS index + rate [Mb/s]."""
+    rates = DATA_RATES[channel_width]
+    confs = []
+    for c, share in result.get('shares', {}).items():
+        if share <= 1e-9:
+            continue
+        links = []
+        for l in result['links'].get(c, []):
+            ap, sta = l[0].removeprefix('AP_'), l[1].removeprefix('STA_')
+            rate = result['link_rates'][c][l]
+            mcs = int(np.argmin(np.abs(rates - rate)))
+            links.append({
+                'ap': int(ap), 'sta': int(sta),
+                'tx_power': float(result['tx_power'][c][l]),
+                'mcs': mcs, 'rate': float(rate),
+            })
+        confs.append({'share': float(share), 'links': links})
+    return confs
 
 
 def _run_optimal(opt_type):
@@ -28,8 +51,8 @@ def _run_optimal(opt_type):
             max_tx_power=max_tx_power,
             min_tx_power=min_tx_power,
         )
-        _, total_rate = solver(path_loss, associations)
-        emit({'type': 'hline', 'value': float(total_rate)})
+        result, total_rate = solver(path_loss, associations)
+        emit({'type': 'hline', 'value': float(total_rate), 'config': _optimal_config(result, scenario.channel_width)})
 
     return run
 

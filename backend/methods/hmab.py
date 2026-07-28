@@ -15,7 +15,7 @@ from reinforced_lib.agents.mab import (
     UCB,
 )
 
-from .base import register
+from .base import register, step_config
 
 AGENT_TYPES = {
     'EGreedy': EGreedy,
@@ -126,9 +126,10 @@ def _mab_loop(scenario, make_factory, n_steps, seed, emit, stop_event):
         if stop_event.is_set():
             return
         key, scenario_key = jax.random.split(key)
-        tx = rng.call(agent.sample, reward)
-        thr, reward = scenario(scenario_key, *tx)
-        emit({'type': 'point', 'step': step, 'thr': float(thr)})
+        tx, tx_power_levels = rng.call(agent.sample, reward)
+        thr, reward, internals = scenario(scenario_key, tx, tx_power_levels, return_internals=True)
+        config = step_config(scenario, tx, tx_power_levels, internals.mcs)
+        emit({'type': 'point', 'step': step, 'thr': float(thr), 'config': config})
 
 
 def _run_mab(hierarchical):

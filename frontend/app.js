@@ -436,7 +436,7 @@
       }
       if (msg.type === 'points') Chart.addPoints(msg.run_id, msg.points);
       else if (msg.type === 'point') Chart.addPoints(msg.run_id, [msg]);
-      else if (msg.type === 'hline') Chart.setHline(msg.run_id, msg.value, msg.ci_low, msg.ci_high);
+      else if (msg.type === 'hline') Chart.setHline(msg.run_id, msg.value, msg.ci_low, msg.ci_high, msg.config);
       else if (msg.type === 'status_msg') run.stateEl.textContent = msg.msg;
       else if (msg.type === 'status') {
         run.stateEl.textContent = msg.state === 'error' ? `error: ${msg.msg}` : msg.state;

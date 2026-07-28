@@ -20,7 +20,7 @@ transmit simultaneously to selected stations with reduced power. This demo lets 
 - **T-Meta** — metaheuristic search (SA / RRHC / tabu) approximating T-Optimal
 - **F-Meta** — fairness column generation approximating F-Optimal
 - **FM4WiFi** — generative flow-matching scheduler with a surrogate model
-- **MAPC-Surrogate** — random configurations scored by a GNN surrogate model
+- **Surrogate** — random configurations scored by a GNN surrogate model
 - **DCF** — legacy 802.11 channel access (discrete event simulation)
 - **SR** — 802.11ax OBSS/PD spatial reuse (discrete event simulation)
 - **Random (single TX)** — legacy-like random single-transmission baseline
@@ -130,7 +130,7 @@ Pick a method and its parameters:
 - **FM4WiFi** — candidates per step, top-k evaluated, surrogate vs simulator scoring;
   the number of observation-generation rounds follows from the time horizon. Trained on
   specific topology distributions; hand-drawn topologies may be out-of-distribution.
-- **MAPC-Surrogate** — candidates per step, top-k evaluated, risk-averse scoring toggle;
+- **Surrogate** — candidates per step, top-k evaluated, risk-averse scoring toggle;
   draws random Co-SR configurations and scores them all in one batched forward pass of
   a GNN surrogate model — no learning, no generation, no iterative search. Same
   out-of-distribution caveat as FM4WiFi.
@@ -153,7 +153,8 @@ from the Random level toward the T-Optimal dashed line.
 
 Save downloads everything needed to reproduce or post-process the comparison as
 one JSON file: the scenario and its parameters, the channel/PHY settings, and every run
-with its method, its parameters, and its recorded data rates.
+with its method, its parameters, its recorded data rates, and (where the method exposes
+it) the selected Co-SR configuration behind each point.
 
 ```jsonc
 {
@@ -172,7 +173,14 @@ with its method, its parameters, and its recorded data rates.
     "params": {"agent_type": "UCB", "seed": 42, "params_lvl1": {"c": 1.5, "gamma": 0.6}, ...},
     "steps": [1, 2, 3],                     // x values (TXOP index)
     "data_rate": [98.1, 104.7, 111.2],      // y values [Mb/s]
-    "hline": null, "ci": null               // one-shot methods: value + 95% CI instead
+    "config": [{"links": [{"ap": 0, "sta": 4, "tx_power": 12.7, "mcs": 9, "rate": 114.7}]}, ...],
+                                            // per-step Co-SR config: active AP→STA links, tx
+                                            // power [dBm], MCS index + nominal rate [Mb/s].
+                                            // null entries where a step's config wasn't captured
+                                            // (see 3.6); one entry per "steps"/"data_rate" index.
+    "hline": null, "ci": null,              // one-shot methods: value + 95% CI instead
+    "hline_config": null                    // T-/F-Optimal: the MILP's time-shared schedule
+                                            // instead — [{"share": 0.62, "links": [...]}, ...]
   }]
 }
 ```
@@ -194,14 +202,16 @@ as each carries an explicit seed.
   95% CI band).
 - **EMA slider** — exponential moving-average smoothing applied client-side; the raw
   signal stays visible as a faint line behind the smoothed one. Set to 0 to disable.
-- Hover for exact values; the toolbar (top right of the chart) offers zoom/pan/PNG
-  export; the app follows your system light/dark theme.
+- Hover for exact values and, for most methods, the Co-SR configuration behind that
+  point: active AP→STA links, tx power, MCS and its rate.
+- The toolbar (top right of the chart) offers zoom/pan/PNG export; the app follows
+  your system light/dark theme.
 
 ## 4. Troubleshooting
 
 | Symptom | Cause / fix |
 |---|---|
-| FM4WiFi / MAPC-Surrogate run ends with a checkpoint error | `.venv/src/lai4wifi` or `.venv/src/mapc-surrogate` missing — rerun `./install.sh`. |
+| FM4WiFi / Surrogate run ends with a checkpoint error | `.venv/src/lai4wifi` or `.venv/src/mapc-surrogate` missing — rerun `./install.sh`. |
 | Flat MAB errors with *action space is too large* | Expected guard. Use H-MAB, fewer APs/stations, or fewer TX power levels. |
 | DCF/SR runs for many minutes | Normal — detailed DES. Reduce simulated time or topology size, or stop the run. |
 | First run of a method stalls a few seconds | JAX JIT compilation; subsequent steps are fast. |
@@ -226,12 +236,12 @@ mapc-demo/
 │       ├── dcf.py        DCF / SR (mapc-dcf, SimPy DES)
 │       ├── mh.py         SA / RRHC / Tabu (mapc-mh)
 │       ├── fm.py         FM4WiFi (lai4wifi; lazy checkpoint loading, cached)
-│       └── surrogate.py  MAPC-Surrogate (mapc-surrogate; lazy checkpoint loading, cached)
+│       └── surrogate.py  Surrogate (mapc-surrogate; lazy checkpoint loading, cached)
 └── frontend/             vanilla JS, no build step
     ├── index.html
     ├── style.css         light/dark via prefers-color-scheme
     ├── topology.js       SVG topology editor + scenario preview renderer
-    ├── chart.js          Plotly wrapper: runs, EMA, hlines, CI bands
+    ├── chart.js          Plotly wrapper: runs, EMA, hlines, CI bands, config tooltips
     ├── app.js            catalog-driven forms, run lifecycle, WebSocket client
     └── vendor/plotly.min.js
 ```

@@ -22,3 +22,23 @@ def method_catalog() -> list[dict]:
         {k: v for k, v in m.items() if k != 'run'}
         for m in METHODS.values()
     ]
+
+
+def step_config(scenario, tx, tx_power_levels, mcs):
+    """Active Co-SR links for one step: transmitter, receiver, tx power [dBm], MCS index + rate [Mb/s]."""
+    import numpy as np
+    from mapc_sim.constants import DATA_RATES
+
+    rates = DATA_RATES[scenario.channel_width]
+    tx = np.asarray(tx)
+    tx_power_levels = np.asarray(tx_power_levels)
+    mcs = np.asarray(mcs)
+    links = []
+    for i, j in zip(*np.nonzero(tx)):
+        m = int(mcs[i])
+        links.append({
+            'ap': int(i), 'sta': int(j),
+            'tx_power': float(scenario.tx_power[i] - scenario.tx_power_delta * tx_power_levels[i]),
+            'mcs': m, 'rate': float(rates[m]),
+        })
+    return {'links': links}

@@ -56,14 +56,18 @@ class RunManager:
             if msg['type'] == 'point':
                 buffer.append(msg)
                 if len(buffer) >= 10:
-                    emit({'type': 'points', 'points': [{'step': m['step'], 'thr': m['thr']} for m in buffer]})
+                    emit({'type': 'points', 'points': [
+                        {'step': m['step'], 'thr': m['thr'], 'config': m.get('config')} for m in buffer
+                    ]})
                     buffer.clear()
             else:
                 emit(msg)
 
         def flush():
             if buffer:
-                emit({'type': 'points', 'points': [{'step': m['step'], 'thr': m['thr']} for m in buffer]})
+                emit({'type': 'points', 'points': [
+                    {'step': m['step'], 'thr': m['thr'], 'config': m.get('config')} for m in buffer
+                ]})
                 buffer.clear()
 
         try:

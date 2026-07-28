@@ -4,12 +4,13 @@ T-Meta approximates T-Optimal (max total throughput) with SA / RRHC / Tabu;
 F-Meta approximates F-Optimal (max-min fairness) with SA / VNS / CG.
 """
 
+from mapc_mh.config import make_config_to_arrays
 from mapc_mh.methods.throughput import rrhc as t_rrhc
 from mapc_mh.methods.throughput import sa as t_sa
 from mapc_mh.methods.throughput import tabu as t_tabu
 from mapc_mh.methods.fairness import cg as f_cg
 
-from .base import register
+from .base import register, step_config
 
 
 def _p(name, label, type_, default, tooltip, **extra):
@@ -22,9 +23,15 @@ _SEED = _p('seed', 'Seed', 'number', 42,
            min=0, max=100_000, step=1)
 
 
-def _emit_curve(history, emit, step_scale=1):
+def _emit_curve(history, emit, step_scale=1, final_config=None):
+    last = len(history)
     for step, thr in enumerate(history, start=1):
-        emit({'type': 'point', 'step': step * step_scale, 'thr': float(thr)})
+        msg = {'type': 'point', 'step': step * step_scale, 'thr': float(thr)}
+        if step == last and final_config is not None:
+            # Per-step configs aren't tracked by mapc-mh's scan loop — only the
+            # final best-so-far config is available, so it's attached to the last point.
+            msg['config'] = final_config
+        emit(msg)
 
 
 def _run_t_meta(scenario, globals_cfg, params, emit, stop_event):
@@ -43,7 +50,9 @@ def _run_t_meta(scenario, globals_cfg, params, emit, stop_event):
                             tabu_size=int(params.get('tabu_size', 20)),
                             n_candidates=int(params.get('n_candidates', 10)))
 
-    _emit_curve(result.best_history, emit)
+    to_arrays = make_config_to_arrays(result.info)
+    tx, tx_power, mcs = to_arrays(result.best_config)
+    _emit_curve(result.best_history, emit, final_config=step_config(scenario, tx, tx_power, mcs))
     emit({'type': 'status_msg', 'msg': f'best rate: {float(result.best_rate):.1f} Mb/s'})
 
 

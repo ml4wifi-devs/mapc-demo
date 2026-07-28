@@ -1,4 +1,4 @@
-"""MAPC-Surrogate: draw random Co-SR configurations, score them with a GNN
+"""Surrogate: draw random Co-SR configurations, score them with a GNN
 surrogate model in a single batched forward pass, evaluate the best in the
 simulator. No learning, no generation, no iterative optimization.
 
@@ -15,7 +15,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from .base import register
+from .base import register, step_config
 
 import mapc_surrogate
 
@@ -109,13 +109,15 @@ def _run_surrogate(scenario, globals_cfg, params, emit, stop_event):
 
             # 3. Evaluate the top-k candidates in the simulator, report the best one.
             key, eval_key = jax.random.split(key)
-            best_thr = 0.0
+            best_thr, best_config = 0.0, {'links': []}
             for idx in np.argsort(-scores)[:top_k]:
                 tx, tx_power, _ = candidate_txs[idx]
-                data_rate, _ = scenario(eval_key, tx, tx_power)  # mcs=None → ideal MCS
-                best_thr = max(best_thr, float(data_rate))
+                data_rate, _, internals = scenario(eval_key, tx, tx_power, return_internals=True)  # mcs=None → ideal MCS
+                if float(data_rate) >= best_thr:
+                    best_thr = float(data_rate)
+                    best_config = step_config(scenario, tx, tx_power, internals.mcs)
 
-            emit({'type': 'point', 'step': step + 1, 'thr': best_thr})
+            emit({'type': 'point', 'step': step + 1, 'thr': best_thr, 'config': best_config})
 
 
 def _p(name, label, type_, default, tooltip, **extra):
@@ -124,7 +126,7 @@ def _p(name, label, type_, default, tooltip, **extra):
 
 register({
     'id': 'mapc_surrogate',
-    'name': 'MAPC-Surrogate',
+    'name': 'Surrogate',
     'kind': 'curve',
     'description': 'Surrogate-only scheduler: draws random Co-SR configurations, scores them all in one '
                    'batched forward pass of a GNN surrogate model (MDN head), and evaluates the best ones '

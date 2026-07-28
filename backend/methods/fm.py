@@ -13,7 +13,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from .base import register
+from .base import register, step_config
 
 import lai4wifi
 
@@ -146,16 +146,19 @@ def _run_fm(scenario, globals_cfg, params, emit, stop_event):
                     scores.extend(np.asarray(s).tolist())
 
             # 4. Evaluate top-k candidates in the simulator, report the best one.
-            best_thr = 0.0
+            best_thr, best_config = 0.0, {'links': []}
             for idx in np.argsort(-np.asarray(scores))[:top_k]:
-                repeats = []
+                repeats, last_internals = [], None
                 for _ in range(n_eval_repeats):
                     key, sim_key = jax.random.split(key)
-                    data_rate, _, _ = scenario(sim_key, *all_txs[idx], return_internals=True)
+                    data_rate, _, last_internals = scenario(sim_key, *all_txs[idx], return_internals=True)
                     repeats.append(float(data_rate))
-                best_thr = max(best_thr, float(np.mean(repeats)))
+                mean_thr = float(np.mean(repeats))
+                if mean_thr >= best_thr:
+                    best_thr = mean_thr
+                    best_config = step_config(scenario, all_txs[idx][0], all_txs[idx][1], last_internals.mcs)
 
-            emit({'type': 'point', 'step': (step + 1) * n_timesteps, 'thr': best_thr})
+            emit({'type': 'point', 'step': (step + 1) * n_timesteps, 'thr': best_thr, 'config': best_config})
 
 
 def _p(name, label, type_, default, tooltip, **extra):
