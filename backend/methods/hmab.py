@@ -201,7 +201,7 @@ register({
     'id': 'hmab',
     'name': 'H-MAB',
     'kind': 'curve',
-    'description': 'Hierarchical multi-armed bandits (paper method): level 1 selects the set of Co-SR APs, '
+    'description': 'Hierarchical multi-armed bandits: level 1 selects the set of Co-SR APs, '
                    'level 2 the recipient stations, level 3 the transmit powers.',
     'params': [_AGENT_SELECT, *_COMMON],
     'agent_defaults': AGENT_DEFAULTS,
