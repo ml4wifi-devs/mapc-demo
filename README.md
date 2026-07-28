@@ -13,7 +13,7 @@ transmit simultaneously to selected stations with reduced power. This demo lets 
 
 ## Methods available
 
-- **H-MAB** — hierarchical multi-armed bandits, the paper's learning scheduler
+- **H-MAB** — hierarchical multi-armed bandits, a learning scheduler
 - **Flat MAB** — single-level bandit ablation baseline
 - **T-Optimal** — MILP upper bound on total throughput
 - **F-Optimal** — MILP optimum of max-min fairness
@@ -86,7 +86,7 @@ Every AP needs at least one station before you can start a run.
 ### 3.2 Scenario tab
 
 - **Scenario** — the catalog: custom, small office (2×2 rooms with walls), TGax
-  residential (random placement), symmetric residential (the paper's 2×4 room
+  residential (random placement), symmetric residential (a 2×4 room
   topology), TGax enterprise, random open space, spatial-reuse line, toy scenarios,
   indoor small BSSs (hex grid). Each has its own parameters (grid size, distances,
   STAs per AP, topology seed, …).
