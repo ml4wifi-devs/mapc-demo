@@ -1,4 +1,4 @@
-# JAXWiFi: An Open-Source Ecosystem for Learning-Based Multi-AP Coordination beyond Wi-Fi 8
+# JAXWiFi: An Open-Source Ecosystem for Learning-Based Multi-AP Coordination
 
 Interactive browser demo of the [ml4wifi-devs](https://github.com/ml4wifi-devs)
 open-source ecosystem for Coordinated Spatial Reuse (Co-SR) research, accompanying the
