@@ -15,12 +15,18 @@ def _run_optimal(opt_type):
         stations = list(chain.from_iterable(associations.values()))
         path_loss = positions_to_path_loss(np.asarray(scenario.pos), np.asarray(scenario.walls))
 
+        max_tx_power = float(np.max(np.asarray(scenario.tx_power)))
+        levels = int(globals_cfg.get('tx_power_levels', 4))
+        delta = float(scenario.tx_power_delta)
+        min_tx_power = max_tx_power - delta * (levels - 1)
+
         solver = Solver(
             stations=stations,
             access_points=access_points,
             channel_width=scenario.channel_width,
             opt_type=opt_type,
-            max_tx_power=float(np.max(np.asarray(scenario.tx_power))),
+            max_tx_power=max_tx_power,
+            min_tx_power=min_tx_power,
         )
         _, total_rate = solver(path_loss, associations)
         emit({'type': 'hline', 'value': float(total_rate)})
