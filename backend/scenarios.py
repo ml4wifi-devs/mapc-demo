@@ -71,7 +71,7 @@ GLOBAL_PARAMS = [
 SCENARIOS = {
     'custom': {
         'name': 'Custom (draw on canvas)',
-        'description': 'Place APs (right click) and their stations (left click) directly on the topology canvas.',
+        'description': 'Place APs (right click), their stations (left click), and walls (Add wall + drag) directly on the topology canvas.',
         'factory': None,
         'params': [],
     },
@@ -228,7 +228,7 @@ def _build_custom(custom: dict, kwargs: dict) -> StaticScenario:
     n_ap = len(aps)
     pos, associations = [], {}
 
-    for i, ap in enumerate(aps):
+    for ap in aps:
         pos.append([float(ap['x']), float(ap['y'])])
 
     sta_id = n_ap
@@ -243,7 +243,10 @@ def _build_custom(custom: dict, kwargs: dict) -> StaticScenario:
         for sta in ap.get('stas') or []:
             pos.append([float(sta['x']), float(sta['y'])])
 
-    return StaticScenario(jnp.array(pos), associations, str_repr='custom', **kwargs)
+    walls = custom.get('walls') or []
+    walls_pos = jnp.array(walls) if walls else None
+
+    return StaticScenario(jnp.array(pos), associations, walls_pos=walls_pos, str_repr='custom', **kwargs)
 
 
 def scenario_preview(config: dict) -> dict:

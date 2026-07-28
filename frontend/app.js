@@ -134,6 +134,10 @@
   });
   $('btn-undo').addEventListener('click', () => Topology.undo());
   $('btn-clear').addEventListener('click', () => Topology.clear());
+  $('btn-wall-mode').addEventListener('click', () => {
+    Topology.setWallMode(!Topology.isWallMode());
+    $('btn-wall-mode').classList.toggle('active', Topology.isWallMode());
+  });
   Topology.setOnChange(() => { stopAll(); resetChart(); });
 
   // ---------- method tab ----------
@@ -307,7 +311,7 @@
       setParams($('scenario-params'), s.params);
       setParams($('global-params'), s.globals);
     }
-    if (s.custom && s.custom.aps) Topology.setCustom(s.custom.aps, false);
+    if (s.custom && s.custom.aps) Topology.setCustom(s.custom.aps, s.custom.walls || [], false);
     refreshPreview();
 
     // Preload the method panel with the first recorded run, so the loaded

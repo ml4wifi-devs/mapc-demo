@@ -22,6 +22,7 @@
       <div class="toolbar">
         <span id="topo-mode-badge" class="badge"></span>
         <button id="btn-customize" class="small" title="Copy the current topology into custom mode for editing">Customize</button>
+        <button id="btn-wall-mode" class="small" title="Toggle wall drawing: drag to add a wall segment">Add wall</button>
         <button id="btn-undo" class="small" title="Remove the most recently placed node">Undo</button>
         <button id="btn-clear" class="small" title="Remove all nodes">Clear</button>
       </div>
@@ -29,6 +30,7 @@
     <div id="topo-help" class="hint">
       <b>Right click</b>: place AP &nbsp;&middot;&nbsp; <b>left click</b>: place STA for the selected AP
       &nbsp;&middot;&nbsp; <b>click</b> AP to select &nbsp;&middot;&nbsp; <b>drag</b> to move &nbsp;&middot;&nbsp; <b>double click</b> to delete
+      &nbsp;&middot;&nbsp; <b>Add wall</b>: drag on empty canvas to draw a wall, double click a wall to delete
     </div>
     <svg id="topology"></svg>
     <div id="topo-coords" class="hint mono"></div>

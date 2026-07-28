@@ -76,8 +76,10 @@ Two modes, shown by the badge in the panel header:
   - **click an AP** — select it (dashed ring), so new stations attach to it,
   - **drag** — move any node,
   - **double click** — delete a node (deleting an AP deletes its stations),
+  - **Add wall** — toggles wall-drawing mode: drag on empty canvas to add a wall
+    segment, double click a wall to delete it.
   - **Undo** — remove the most recently placed node of the selected AP,
-  - **Clear** — remove everything.
+  - **Clear** — remove everything (nodes and walls).
 
 Every AP needs at least one station before you can start a run.
 
@@ -159,7 +161,8 @@ with its method, its parameters, and its recorded data rates.
   "scenario": {
     "id": "small_office",
     "params": {"d_ap": 25, "d_sta": 2},
-    "custom": {"aps": []},                  // hand-drawn topology, when id == "custom"
+    "custom": {"aps": [], "walls": []},      // hand-drawn topology, when id == "custom"
+                                             // aps: [{x, y, stas: [{x, y}]}], walls: [[x1, y1, x2, y2]]
     "globals": {"n_steps": 600, "channel_width": 20, "path_loss": "enterprise", ...}
   },
   "runs": [{

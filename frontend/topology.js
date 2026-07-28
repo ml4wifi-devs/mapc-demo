@@ -9,13 +9,16 @@ const Topology = (() => {
   const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   const bssColor = (i) => cssVar(`--series-${(i % 8) + 1}`);
 
-  // Custom topology state: [{x, y, stas: [{x, y}]}]
+  // Custom topology state: [{x, y, stas: [{x, y}]}], walls: [[x1,y1,x2,y2], ...]
   let aps = [];
+  let walls = [];
   let selectedAp = -1;
   let editable = true;
+  let wallMode = false;
   let preview = null; // {pos, associations, walls_pos}
   let onChange = () => {};
   let dragging = null;
+  let drawingWall = null; // {x1, y1}
 
   // World<->screen transform.
   let view = { x0: -10, y0: -10, x1: 60, y1: 60 };
@@ -27,6 +30,7 @@ const Topology = (() => {
       preview.walls_pos.forEach(w => { pts.push([w[0], w[1]]); pts.push([w[2], w[3]]); });
     } else {
       aps.forEach(ap => { pts.push([ap.x, ap.y]); ap.stas.forEach(s => pts.push([s.x, s.y])); });
+      walls.forEach(w => { pts.push([w[0], w[1]]); pts.push([w[2], w[3]]); });
     }
     if (!pts.length) return { x0: -10, y0: -10, x1: 60, y1: 60 };
     let x0 = Math.min(...pts.map(p => p[0])), x1 = Math.max(...pts.map(p => p[0]));
@@ -128,6 +132,17 @@ const Topology = (() => {
       return;
     }
 
+    walls.forEach((w, i) => {
+      svg.appendChild(make('line', {
+        x1: sx(w[0]), y1: sy(w[1]), x2: sx(w[2]), y2: sy(w[3]),
+        stroke: cssVar('--wall'), 'stroke-width': 4, 'stroke-linecap': 'round',
+      }));
+      svg.appendChild(make('line', {
+        x1: sx(w[0]), y1: sy(w[1]), x2: sx(w[2]), y2: sy(w[3]),
+        stroke: 'transparent', 'stroke-width': 14, cursor: 'pointer', 'data-wall': i,
+      }));
+    });
+
     aps.forEach((ap, i) => {
       const color = bssColor(i);
       ap.stas.forEach((s, j) => {
@@ -152,6 +167,9 @@ const Topology = (() => {
       if (t.dataset && t.dataset.ap !== undefined) {
         return { ap: +t.dataset.ap, sta: +t.dataset.sta };
       }
+      if (t.dataset && t.dataset.wall !== undefined) {
+        return { wall: +t.dataset.wall };
+      }
       t = t.parentNode;
     }
     return null;
@@ -173,7 +191,9 @@ const Topology = (() => {
   let suppressClick = false;
 
   function deleteNode(h) {
-    if (h.sta === -1) {
+    if (h.wall !== undefined) {
+      walls.splice(h.wall, 1);
+    } else if (h.sta === -1) {
       aps.splice(h.ap, 1);
       if (selectedAp >= aps.length) selectedAp = aps.length - 1;
     } else {
@@ -183,20 +203,33 @@ const Topology = (() => {
     onChange();
   }
 
+  function sameHit(a, b) {
+    if (a.wall !== undefined || b.wall !== undefined) return a.wall === b.wall;
+    return a.ap === b.ap && a.sta === b.sta;
+  }
+
   svg.addEventListener('pointerdown', (evt) => {
     if (evt.button !== 0 || !editable) return;
     const h = hit(evt);
+    if (wallMode && !h) {
+      const p = toWorld(evt);
+      drawingWall = { x1: Math.round(p.x * 10) / 10, y1: Math.round(p.y * 10) / 10 };
+      suppressClick = true;
+      svg.setPointerCapture(evt.pointerId);
+      return;
+    }
     if (!h) { lastTap = null; return; }
     const now = performance.now();
     // Pointer capture retargets the trailing click to the svg itself, so the
     // click handler cannot tell it started on a node — suppress it here.
     suppressClick = true;
-    if (lastTap && lastTap.ap === h.ap && lastTap.sta === h.sta && now - lastTap.t < 400) {
+    if (lastTap && sameHit(lastTap, h) && now - lastTap.t < 400) {
       lastTap = null;
       deleteNode(h);
       return;
     }
     lastTap = { ...h, t: now };
+    if (h.wall !== undefined) return; // walls: select-to-delete only, no drag-move
     dragging = { ...h, moved: false };
     if (h.sta === -1) { selectedAp = h.ap; render(); }
     svg.setPointerCapture(evt.pointerId);
@@ -206,6 +239,15 @@ const Topology = (() => {
     const p = toWorld(evt);
     document.getElementById('topo-coords').textContent =
       editable ? `x: ${p.x.toFixed(1)} m, y: ${p.y.toFixed(1)} m` : '';
+    if (drawingWall) {
+      render();
+      const x2 = Math.round(p.x * 10) / 10, y2 = Math.round(p.y * 10) / 10;
+      svg.appendChild(make('line', {
+        x1: sx(drawingWall.x1), y1: sy(drawingWall.y1), x2: sx(x2), y2: sy(y2),
+        stroke: cssVar('--wall'), 'stroke-width': 4, 'stroke-linecap': 'round', 'stroke-dasharray': '6 4',
+      }));
+      return;
+    }
     if (!dragging) return;
     dragging.moved = true;
     const target = dragging.sta === -1 ? aps[dragging.ap] : aps[dragging.ap].stas[dragging.sta];
@@ -215,6 +257,18 @@ const Topology = (() => {
   });
 
   svg.addEventListener('pointerup', (evt) => {
+    if (drawingWall) {
+      const p = toWorld(evt);
+      const x2 = Math.round(p.x * 10) / 10, y2 = Math.round(p.y * 10) / 10;
+      const len = Math.hypot(x2 - drawingWall.x1, y2 - drawingWall.y1);
+      if (len >= 0.5) {
+        walls.push([drawingWall.x1, drawingWall.y1, x2, y2]);
+        onChange();
+      }
+      drawingWall = null;
+      render();
+      return;
+    }
     if (dragging) {
       if (dragging.moved) onChange();
       dragging = null;
@@ -223,7 +277,7 @@ const Topology = (() => {
 
   svg.addEventListener('click', (evt) => {
     if (suppressClick) { suppressClick = false; return; }
-    if (!editable || dragging) return;
+    if (!editable || dragging || wallMode) return;
     if (hit(evt)) return; // click on node = select, handled in pointerdown
     if (!aps.length) return;
     const p = toWorld(evt);
@@ -239,9 +293,10 @@ const Topology = (() => {
     setPreview(p) { preview = p; editable = false; render(); },
     setEditable() { preview = null; editable = true; render(); },
     isEditable: () => editable,
-    getCustom: () => ({ aps }),
-    setCustom(newAps, select = true) {
+    getCustom: () => ({ aps, walls }),
+    setCustom(newAps, newWalls = [], select = true) {
       aps = newAps;
+      walls = newWalls;
       selectedAp = select ? aps.length - 1 : -1;
       preview = null;
       editable = true;
@@ -254,6 +309,7 @@ const Topology = (() => {
         x: p.pos[ap][0], y: p.pos[ap][1],
         stas: p.associations[ap].map(s => ({ x: p.pos[s][0], y: p.pos[s][1] })),
       }));
+      walls = p.walls_pos.map(w => [...w]);
       selectedAp = -1;
       preview = null;
       editable = true;
@@ -267,7 +323,9 @@ const Topology = (() => {
       render();
       onChange();
     },
-    clear() { aps = []; selectedAp = -1; render(); onChange(); },
+    clear() { aps = []; walls = []; selectedAp = -1; render(); onChange(); },
+    setWallMode(v) { wallMode = v; drawingWall = null; },
+    isWallMode: () => wallMode,
     setOnChange(fn) { onChange = fn; },
     render,
   };
